@@ -65,7 +65,7 @@ final class ContainerTest extends TestCase
             NestedDependency::class,
             ValuesDependency::class
         );
-        $ignore = ['one', 'two'];
+        $ignore = ['one', 'two', 'extra'];
         $stdClass = new stdClass();
         $container = new Container(
             stdClass: $stdClass,

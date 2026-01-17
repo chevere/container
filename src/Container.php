@@ -65,7 +65,6 @@ final class Container implements ContainerInterface
     ): ContainerInterface {
         $new = clone $this;
         $parameters = getParameters($dependencies);
-        $ignore = array_values(array_intersect($ignore, $parameters->keys()));
         $missingDeps = array_diff(
             $parameters->keys(),
             $new->keys(),
