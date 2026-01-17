@@ -113,16 +113,17 @@ final class ContainerTest extends TestCase
 
     public function testExtract(): void
     {
+        $stdClass = new stdClass();
         $container = new Container(
+            stdClass: $stdClass,
             foo: 'bar',
             bar: 'baz'
         );
         $extract = $container->extract(StdClassDependency::class);
         $this->assertArrayHasKey('stdClass', $extract);
         $this->assertCount(1, $extract);
-        $this->assertInstanceOf(
-            stdClass::class,
-            $extract['stdClass']
-        );
+        $this->assertSame($stdClass, $extract['stdClass']);
+        $this->assertArrayNotHasKey('foo', $extract);
+        $this->assertArrayNotHasKey('bar', $extract);
     }
 }
