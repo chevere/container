@@ -16,7 +16,7 @@ jobs:
             infection: "latest"
           - php: "8.4"
             infection: "latest"
-          - php: "8.5˝"
+          - php: "8.5"
             infection: "latest"
     env:
       tools: composer, phpstan, infection:${{ matrix.infection }}
