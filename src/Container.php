@@ -16,14 +16,13 @@ namespace Chevere\Container;
 use Chevere\Container\Exceptions\ContainerException;
 use Chevere\Container\Exceptions\ContainerNotFoundException;
 use Chevere\Container\Interfaces\ContainerInterface;
+use Chevere\Container\Interfaces\DependenciesInterface;
 use Chevere\DataStructure\Map;
 use Chevere\DataStructure\Traits\MapTrait;
 use Chevere\Parameter\Interfaces\ObjectParameterInterface;
-use Chevere\Parameter\Interfaces\ParametersAccessInterface;
 use Chevere\Parameter\Interfaces\ParametersInterface;
 use ReflectionMethod;
 use Throwable;
-use function Chevere\Parameter\getParameters;
 use function Chevere\Parameter\reflectionToParameters;
 
 final class Container implements ContainerInterface
@@ -60,14 +59,51 @@ final class Container implements ContainerInterface
     }
 
     public function withAutoInject(
-        ParametersInterface|ParametersAccessInterface $dependencies,
+        DependenciesInterface $dependencies,
         string ...$ignore
     ): ContainerInterface {
         $new = clone $this;
-        $parameters = getParameters($dependencies);
+        $new->autoInject($dependencies->parameters(), ...$ignore);
+
+        return $new;
+    }
+
+    public function with(mixed ...$entry): ContainerInterface
+    {
+        $new = clone $this;
+        $new->put(...$entry);
+
+        return $new;
+    }
+
+    public function without(string ...$entry): ContainerInterface
+    {
+        $new = clone $this;
+        $new->map = $new->map->without(...$entry);
+
+        return $new;
+    }
+
+    public function extract(string $className): array
+    {
+        $new = clone $this;
+        $reflection = new ReflectionMethod($className, '__construct');
+        $parameters = reflectionToParameters($reflection);
+        $new->autoInject($parameters);
+        $extra = array_diff($new->keys(), $parameters->keys());
+
+        return iterator_to_array(
+            $new->without(...$extra)
+        );
+    }
+
+    private function autoInject(
+        ParametersInterface $parameters,
+        string ...$ignore
+    ): void {
         $missingDeps = array_diff(
             $parameters->keys(),
-            $new->keys(),
+            $this->keys(),
             $ignore
         );
         $failures = [];
@@ -87,7 +123,7 @@ final class Container implements ContainerInterface
                 $reflectionParameters = reflectionToParameters($reflection);
                 if (count($reflectionParameters) > 0) {
                     try {
-                        $arguments = $reflectionParameters(...iterator_to_array($new))
+                        $arguments = $reflectionParameters(...iterator_to_array($this))
                             ->toArray();
                     } catch (Throwable $e) {
                         $failures[] = [$missingDep, "Failed to resolve dependencies for `{$className}`: {$e->getMessage()}"];
@@ -98,7 +134,7 @@ final class Container implements ContainerInterface
             }
 
             try {
-                $new = $new->with(
+                $this->put(
                     ...[
                         $missingDep => new $className(...$arguments),
                     ]
@@ -115,37 +151,12 @@ final class Container implements ContainerInterface
 
             throw new ContainerException(implode("\n", $lines));
         }
-
-        return $new;
     }
 
-    public function with(mixed ...$entry): ContainerInterface
+    private function put(mixed ...$entry): void
     {
-        $new = clone $this;
         foreach ($entry as $name => $value) {
-            $new->map = $new->map->withPut(strval($name), $value);
+            $this->map = $this->map->withPut(strval($name), $value);
         }
-
-        return $new;
-    }
-
-    public function without(string ...$entry): ContainerInterface
-    {
-        $new = clone $this;
-        $new->map = $new->map->without(...$entry);
-
-        return $new;
-    }
-
-    public function extract(string $className): array
-    {
-        $reflection = new ReflectionMethod($className, '__construct');
-        $dependencies = reflectionToParameters($reflection);
-        $new = $this->withAutoInject($dependencies);
-        $extra = array_diff($this->keys(), $dependencies->keys());
-
-        return iterator_to_array(
-            $new->without(...$extra)
-        );
     }
 }
