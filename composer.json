@@ -13,7 +13,7 @@
     ],
     "require": {
         "chevere/data-structure": "^1.1",
-        "chevere/parameter": "^1.2",
+        "chevere/parameter": "^2.0.x-dev",
         "psr/container": "^2.0"
     },
     "require-dev": {
