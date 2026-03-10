@@ -66,4 +66,11 @@ interface DependenciesInterface extends ParametersAccessInterface
      * Asserts that the given container has all dependencies.
      */
     public function assert(ContainerInterface $container): void;
+
+    /**
+     * Provides access to the class names of all dependencies defined in this collection.
+     *
+     * @return array<string> A vector of dependency class names.
+     */
+    public function classes(): array;
 }

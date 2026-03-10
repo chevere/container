@@ -42,6 +42,7 @@ final class DependenciesTest extends TestCase
                 )
             )
         );
+        $this->assertSame([], $dependencies->classes());
         $this->expectException(OutOfBoundsException::class);
         $dependencies->get('className');
     }
@@ -52,6 +53,7 @@ final class DependenciesTest extends TestCase
         $with = $dependencies->withClass(StdClassDependency::class);
         $this->assertNotSame($dependencies, $with);
         $this->assertTrue($with->has(StdClassDependency::class));
+        $this->assertSame([StdClassDependency::class], $with->classes());
         $this->assertEquals(
             new Dependencies(StdClassDependency::class),
             (new Dependencies())->withClass(StdClassDependency::class)

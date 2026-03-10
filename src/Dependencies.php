@@ -162,6 +162,12 @@ final class Dependencies implements DependenciesInterface
         );
     }
 
+    public function classes(): array
+    {
+        /** @var array<string> */
+        return $this->map->keys();
+    }
+
     private function addClass(string ...$className): void
     {
         foreach ($className as $item) {

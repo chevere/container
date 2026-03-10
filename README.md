@@ -113,6 +113,14 @@ $dependencies = new Dependencies(
 );
 ```
 
+### Reading classes
+
+Use `classes` to get a list of component classes in the collection.
+
+```php
+$classNames = $dependencies->classes();
+```
+
 ### Adding more dependencies
 
 Use `withClass` to add more class dependencies to the collection. Returns a new instance with the specified classes added.
