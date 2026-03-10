@@ -17,6 +17,8 @@ use Chevere\Container\Container;
 use Chevere\Container\Dependencies;
 use Chevere\Container\Exceptions\ContainerException;
 use Chevere\Container\Exceptions\ContainerNotFoundException;
+use Chevere\Tests\src\AutoInjectOrderDependency;
+use Chevere\Tests\src\AutoInjectOrderRoot;
 use Chevere\Tests\src\NestedDependency;
 use Chevere\Tests\src\StdClassDependency;
 use Chevere\Tests\src\ValuesDependency;
@@ -125,5 +127,64 @@ final class ContainerTest extends TestCase
         $this->assertSame($stdClass, $extract['stdClass']);
         $this->assertArrayNotHasKey('foo', $extract);
         $this->assertArrayNotHasKey('bar', $extract);
+    }
+
+    public function testWithAutoInjectSelfContainerOrderFailureIsFeasible(): void
+    {
+        $dependencies = new Dependencies(AutoInjectOrderRoot::class);
+        $base = new Container(
+            stdClass: new stdClass()
+        );
+        // Self-reference is stored as an entry and can become stale across immutable clones.
+        $container = $base->with(container: $base);
+        $this->expectException(ContainerException::class);
+        $this->expectExceptionMessage(
+            <<<PLAIN
+            [autoInjectOrderDependency]: Failed to instantiate Chevere\Tests\src\AutoInjectOrderDependency: Container missing `stdClassDependency`
+            PLAIN
+        );
+        $container->withAutoInject($dependencies);
+    }
+
+    public function testWithAutoInjectSelfContainerDependencyDeferredLast(): void
+    {
+        $dependencies = new Dependencies(AutoInjectOrderRoot::class);
+        $base = new Container(
+            stdClass: new stdClass()
+        );
+        $container = $base->with(container: $base);
+        $firstPass = $container->withAutoInject(
+            $dependencies,
+            'autoInjectOrderDependency'
+        );
+        // Rebind to the current clone so container-aware dependencies see latest entries.
+        $rebound = $firstPass->with(container: $firstPass);
+        $resolved = $rebound->withAutoInject($dependencies);
+        $this->assertTrue($resolved->has('stdClassDependency'));
+        $this->assertTrue($resolved->has('autoInjectOrderDependency'));
+        $this->assertInstanceOf(
+            AutoInjectOrderDependency::class,
+            $resolved->get('autoInjectOrderDependency')
+        );
+    }
+
+    public function testWithAutoInjectSelfContainerDependencyDeferredWithoutRebindFails(): void
+    {
+        $dependencies = new Dependencies(AutoInjectOrderRoot::class);
+        $base = new Container(
+            stdClass: new stdClass()
+        );
+        $container = $base->with(container: $base);
+        $firstPass = $container->withAutoInject(
+            $dependencies,
+            'autoInjectOrderDependency'
+        );
+        $this->expectException(ContainerException::class);
+        $this->expectExceptionMessage(
+            <<<PLAIN
+            [autoInjectOrderDependency]: Failed to instantiate Chevere\Tests\src\AutoInjectOrderDependency: Container missing `stdClassDependency`
+            PLAIN
+        );
+        $firstPass->withAutoInject($dependencies);
     }
 }
