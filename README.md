@@ -32,7 +32,7 @@ composer require chevere/container
 
 ## Container usage
 
-Create a Container by passing the known dependencies.
+Create a Container by passing the known dependencies. Entries are keyed by **parameter name**.
 
 ```php
 use Chevere\Container\Container;
@@ -42,7 +42,16 @@ $container = new Container(
     cipher: $cipher,
     //...
 );
+
+// Resolved by matching parameter name $database
+$container->get('database');
 ```
+
+Design traits:
+
+- Multiple instances of the same type are naturally supported (`primaryDb`, `readonlyDb`).
+- Lookup by class name (e.g. `DatabaseConnection::class`) is not supported by design.
+- Renaming a constructor parameter is a breaking change to the container contract.
 
 ### Checking entries
 
