@@ -16,6 +16,7 @@ namespace Chevere\Tests;
 use Chevere\Container\Container;
 use Chevere\Container\Dependencies;
 use Chevere\Tests\src\StdClassDependency;
+use Chevere\Tests\src\ValueDefaultDependency;
 use Chevere\Tests\src\ValueIntDependency;
 use Chevere\Tests\src\ValuesDependency;
 use Chevere\Tests\src\ValueStringDependency;
@@ -141,6 +142,28 @@ final class DependenciesTest extends TestCase
             ValueIntDependency::class,
             new Container()
         );
+    }
+
+    public function testDefaultValueNoBinds(): void
+    {
+        $container = new Container();
+        $dependencies = new Dependencies(ValueDefaultDependency::class);
+        $dependencies->assert($container);
+        $object = new ValueDefaultDependency(
+            ...$dependencies->extract(ValueDefaultDependency::class, $container)
+        );
+        $this->assertSame(1, $object->one);
+    }
+
+    public function testDefaultValueOverride(): void
+    {
+        $container = new Container(one: 101);
+        $dependencies = new Dependencies(ValueDefaultDependency::class);
+        $dependencies->assert($container);
+        $object = new ValueDefaultDependency(
+            ...$dependencies->extract(ValueDefaultDependency::class, $container)
+        );
+        $this->assertSame(101, $object->one);
     }
 
     private function getDependentFileLine(string $className): string

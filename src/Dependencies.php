@@ -84,7 +84,12 @@ final class Dependencies implements DependenciesInterface
         $parameters = $this->get($className);
         $extracted = [];
         foreach ($parameters->keys() as $name) {
+            $parameter = $parameters->get($name);
             if (! $container->has($name)) {
+                if ($parameter->default() !== null) {
+                    continue;
+                }
+
                 throw new OutOfBoundsException(
                     "Dependency `{$name}` not defined in container"
                 );
