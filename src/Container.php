@@ -121,18 +121,19 @@ final class Container implements ContainerInterface
                 continue;
             }
             $className = $parameter->type()->typeHinting();
-            if (method_exists($className, '__construct')) {
-                $reflection = new ReflectionMethod($className, '__construct');
-                $reflectionParameters = reflectionToParameters($reflection);
-                if (count($reflectionParameters) > 0) {
-                    try {
-                        $arguments = $reflectionParameters(...iterator_to_array($this))
-                            ->toArray();
-                    } catch (Throwable $e) {
-                        $failures[] = [$missingDep, "Failed to resolve dependencies for `{$className}`: {$e->getMessage()}"];
+            if (! method_exists($className, '__construct')) {
+                continue;
+            }
+            $reflection = new ReflectionMethod($className, '__construct');
+            $reflectionParameters = reflectionToParameters($reflection);
+            if (count($reflectionParameters) > 0) {
+                try {
+                    $arguments = $reflectionParameters(...iterator_to_array($this))
+                        ->toArray();
+                } catch (Throwable $e) {
+                    $failures[] = [$missingDep, "Failed to resolve dependencies for `{$className}`: {$e->getMessage()}"];
 
-                        continue;
-                    }
+                    continue;
                 }
             }
 

@@ -21,6 +21,7 @@ use Chevere\Tests\src\AutoInjectOrderDependency;
 use Chevere\Tests\src\AutoInjectOrderRoot;
 use Chevere\Tests\src\ClassWithObjectDefault;
 use Chevere\Tests\src\ClassWithPrimitiveDefault;
+use Chevere\Tests\src\InterfaceNamedDependency;
 use Chevere\Tests\src\NestedDependency;
 use Chevere\Tests\src\StdClassDependency;
 use Chevere\Tests\src\ValuesDependency;
@@ -218,5 +219,12 @@ final class ContainerTest extends TestCase
         $this->assertSame($context, $args['context']);
         $instance = new ClassWithObjectDefault(...$args);
         $this->assertSame($context, $instance->context);
+    }
+
+    public function testWithAutoInjectInterfaceDependencyIgnored(): void
+    {
+        $dependencies = new Dependencies(InterfaceNamedDependency::class);
+        $container = (new Container())->withAutoInject($dependencies);
+        $this->assertCount(0, $container);
     }
 }
