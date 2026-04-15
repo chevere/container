@@ -108,6 +108,9 @@ final class Container implements ContainerInterface
         );
         $failures = [];
         foreach ($missingDeps as $missingDep) {
+            if ($parameters->optionalKeys()->contains($missingDep)) {
+                continue;
+            }
             $arguments = [];
             $parameter = $parameters->has($missingDep)
                 ? $parameters->get($missingDep)

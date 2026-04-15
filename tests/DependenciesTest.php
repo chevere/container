@@ -15,8 +15,9 @@ namespace Chevere\Tests;
 
 use Chevere\Container\Container;
 use Chevere\Container\Dependencies;
+use Chevere\Tests\src\ClassWithObjectDefault;
+use Chevere\Tests\src\ClassWithPrimitiveDefault;
 use Chevere\Tests\src\StdClassDependency;
-use Chevere\Tests\src\ValueDefaultDependency;
 use Chevere\Tests\src\ValueIntDependency;
 use Chevere\Tests\src\ValuesDependency;
 use Chevere\Tests\src\ValueStringDependency;
@@ -25,6 +26,7 @@ use LogicException;
 use OutOfBoundsException;
 use PHPUnit\Framework\TestCase;
 use ReflectionMethod;
+use stdClass;
 use TypeError;
 
 final class DependenciesTest extends TestCase
@@ -146,24 +148,27 @@ final class DependenciesTest extends TestCase
 
     public function testDefaultValueNoBinds(): void
     {
-        $container = new Container();
-        $dependencies = new Dependencies(ValueDefaultDependency::class);
+        $context = new stdClass();
+        $container = new Container(context: $context);
+        $dependencies = new Dependencies(ClassWithObjectDefault::class);
         $dependencies->assert($container);
-        $object = new ValueDefaultDependency(
-            ...$dependencies->extract(ValueDefaultDependency::class, $container)
+        $object = new ClassWithObjectDefault(
+            ...$dependencies->extract(ClassWithObjectDefault::class, $container)
         );
-        $this->assertSame(1, $object->one);
+        $this->assertSame($context, $object->context);
     }
 
     public function testDefaultValueOverride(): void
     {
-        $container = new Container(one: 101);
-        $dependencies = new Dependencies(ValueDefaultDependency::class);
+        $context = new stdClass();
+        $container = new Container(context: $context, channel: 'custom');
+        $dependencies = new Dependencies(ClassWithPrimitiveDefault::class);
         $dependencies->assert($container);
-        $object = new ValueDefaultDependency(
-            ...$dependencies->extract(ValueDefaultDependency::class, $container)
+        $object = new ClassWithPrimitiveDefault(
+            ...$dependencies->extract(ClassWithPrimitiveDefault::class, $container)
         );
-        $this->assertSame(101, $object->one);
+        $this->assertSame($context, $object->context);
+        $this->assertSame('custom', $object->channel);
     }
 
     private function getDependentFileLine(string $className): string

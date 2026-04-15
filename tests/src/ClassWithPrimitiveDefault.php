@@ -13,10 +13,13 @@ declare(strict_types=1);
 
 namespace Chevere\Tests\src;
 
-class ValueDefaultDependency
+use stdClass;
+
+final class ClassWithPrimitiveDefault
 {
     public function __construct(
-        public int $one = 1,
+        public readonly stdClass $context,
+        public readonly string $channel = 'default',
     ) {
     }
 }

@@ -19,6 +19,8 @@ use Chevere\Container\Exceptions\ContainerException;
 use Chevere\Container\Exceptions\ContainerNotFoundException;
 use Chevere\Tests\src\AutoInjectOrderDependency;
 use Chevere\Tests\src\AutoInjectOrderRoot;
+use Chevere\Tests\src\ClassWithObjectDefault;
+use Chevere\Tests\src\ClassWithPrimitiveDefault;
 use Chevere\Tests\src\NestedDependency;
 use Chevere\Tests\src\StdClassDependency;
 use Chevere\Tests\src\ValuesDependency;
@@ -186,5 +188,35 @@ final class ContainerTest extends TestCase
             PLAIN
         );
         $firstPass->withAutoInject($dependencies);
+    }
+
+    public function testObjectDefaultIsSkippedByAutoInject(): void
+    {
+        $container = new Container();
+        $args = $container->extract(ClassWithObjectDefault::class);
+        $this->assertArrayNotHasKey('context', $args);
+        $instance = new ClassWithObjectDefault(...$args);
+        $this->assertInstanceOf(stdClass::class, $instance->context);
+    }
+
+    public function testPrimitiveDefaultIsSkippedByAutoInject(): void
+    {
+        $context = new stdClass();
+        $container = new Container(context: $context); // $channel intentionally absent
+        $args = $container->extract(ClassWithPrimitiveDefault::class);
+        $this->assertSame($context, $args['context']);
+        $this->assertArrayNotHasKey('channel', $args);
+        $instance = new ClassWithPrimitiveDefault(...$args);
+        $this->assertSame('default', $instance->channel);
+    }
+
+    public function testExplicitBindingIsUsedEvenWhenParameterHasDefault(): void
+    {
+        $context = new stdClass();
+        $container = new Container(context: $context);
+        $args = $container->extract(ClassWithObjectDefault::class);
+        $this->assertSame($context, $args['context']);
+        $instance = new ClassWithObjectDefault(...$args);
+        $this->assertSame($context, $instance->context);
     }
 }
