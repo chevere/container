@@ -21,6 +21,7 @@ use Chevere\DataStructure\Map;
 use Chevere\DataStructure\Traits\MapTrait;
 use Chevere\Parameter\Interfaces\ObjectParameterInterface;
 use Chevere\Parameter\Interfaces\ParametersInterface;
+use Chevere\Parameter\Interfaces\TypeInterface;
 use ReflectionMethod;
 use Throwable;
 use function Chevere\Parameter\reflectionToParameters;
@@ -120,20 +121,23 @@ final class Container implements ContainerInterface
 
                 continue;
             }
-            $className = $parameter->type()->typeHinting();
-            if (! method_exists($className, '__construct')) {
+            $primitive = $parameter->type()->primitive();
+            if ($primitive !== TypeInterface::PRIMITIVE_CLASS_NAME) {
                 continue;
             }
-            $reflection = new ReflectionMethod($className, '__construct');
-            $reflectionParameters = reflectionToParameters($reflection);
-            if (count($reflectionParameters) > 0) {
-                try {
-                    $arguments = $reflectionParameters(...iterator_to_array($this))
-                        ->toArray();
-                } catch (Throwable $e) {
-                    $failures[] = [$missingDep, "Failed to resolve dependencies for `{$className}`: {$e->getMessage()}"];
+            $className = $parameter->type()->typeHinting();
+            if (method_exists($className, '__construct')) {
+                $reflection = new ReflectionMethod($className, '__construct');
+                $reflectionParameters = reflectionToParameters($reflection);
+                if (count($reflectionParameters) > 0) {
+                    try {
+                        $arguments = $reflectionParameters(...iterator_to_array($this))
+                            ->toArray();
+                    } catch (Throwable $e) {
+                        $failures[] = [$missingDep, "Failed to resolve dependencies for `{$className}`: {$e->getMessage()}"];
 
-                    continue;
+                        continue;
+                    }
                 }
             }
 
