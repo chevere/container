@@ -64,7 +64,7 @@ final class Container implements ContainerInterface
         string ...$ignore
     ): ContainerInterface {
         $new = clone $this;
-        $new->autoInject($dependencies->parameters(), ...$ignore);
+        $new->autoInject($dependencies->parameters(), [], ...$ignore);
 
         return $new;
     }
@@ -90,7 +90,7 @@ final class Container implements ContainerInterface
         $new = clone $this;
         $reflection = new ReflectionMethod($className, '__construct');
         $parameters = reflectionToParameters($reflection);
-        $new->autoInject($parameters);
+        $new->autoInject($parameters, []);
         $extra = array_diff($new->keys(), $parameters->keys());
 
         return iterator_to_array(
@@ -98,8 +98,12 @@ final class Container implements ContainerInterface
         );
     }
 
+    /**
+     * @param array<string> $resolving
+     */
     private function autoInject(
         ParametersInterface $parameters,
+        array $resolving = [],
         string ...$ignore
     ): void {
         $missingDeps = array_diff(
@@ -110,6 +114,11 @@ final class Container implements ContainerInterface
         $failures = [];
         foreach ($missingDeps as $missingDep) {
             if ($parameters->optionalKeys()->contains($missingDep)) {
+                continue;
+            }
+            if (in_array($missingDep, $resolving, true)) {
+                $failures[] = [$missingDep, "Circular dependency detected while resolving `{$missingDep}`"];
+
                 continue;
             }
             $arguments = [];
@@ -126,18 +135,26 @@ final class Container implements ContainerInterface
                 continue;
             }
             $className = $parameter->type()->typeHinting();
-            if (method_exists($className, '__construct')) {
-                $reflection = new ReflectionMethod($className, '__construct');
-                $reflectionParameters = reflectionToParameters($reflection);
-                if (count($reflectionParameters) > 0) {
-                    try {
-                        $arguments = $reflectionParameters(...iterator_to_array($this))
-                            ->toArray();
-                    } catch (Throwable $e) {
-                        $failures[] = [$missingDep, "Failed to resolve dependencies for `{$className}`: {$e->getMessage()}"];
+            if (! method_exists($className, '__construct')) {
+                continue;
+            }
+            $reflection = new ReflectionMethod($className, '__construct');
+            $reflectionParameters = reflectionToParameters($reflection);
+            if (count($reflectionParameters) > 0) {
+                try {
+                    $this->autoInject(
+                        $reflectionParameters,
+                        [...$resolving, $missingDep],
+                        ...$ignore
+                    );
+                    $arguments = $reflectionParameters(...iterator_to_array($this))->toArray();
+                } catch (Throwable $e) {
+                    $failures[] = [
+                        $missingDep,
+                        "Failed to resolve dependencies for `{$className}`: {$e->getMessage()}",
+                    ];
 
-                        continue;
-                    }
+                    continue;
                 }
             }
 
