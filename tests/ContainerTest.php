@@ -141,6 +141,17 @@ final class ContainerTest extends TestCase
         $this->assertSame($keysBefore, $container->keys());
     }
 
+    public function testExtractAutoInjectsMissingDependency(): void
+    {
+        $container = new Container();
+        $extract = $container->extract(DependsOnClassWithoutConstructor::class);
+        $this->assertArrayHasKey('classWithoutConstructor', $extract);
+        $this->assertInstanceOf(ClassWithoutConstructor::class, $extract['classWithoutConstructor']);
+        $this->assertFalse($container->has('classWithoutConstructor'));
+        $instance = new DependsOnClassWithoutConstructor(...$extract);
+        $this->assertInstanceOf(DependsOnClassWithoutConstructor::class, $instance);
+    }
+
     public function testWithAutoInjectSelfContainerOrderFailureIsFeasible(): void
     {
         $dependencies = new Dependencies(AutoInjectOrderRoot::class);
