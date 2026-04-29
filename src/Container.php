@@ -24,6 +24,7 @@ use Chevere\Parameter\Interfaces\ParametersInterface;
 use Chevere\Parameter\Interfaces\TypeInterface;
 use ReflectionMethod;
 use Throwable;
+use function Chevere\Parameter\parameters;
 use function Chevere\Parameter\reflectionToParameters;
 
 final class Container implements ContainerInterface
@@ -88,14 +89,24 @@ final class Container implements ContainerInterface
     public function extract(string $className): array
     {
         $new = clone $this;
-        $reflection = new ReflectionMethod($className, '__construct');
-        $parameters = reflectionToParameters($reflection);
+        $parameters = $this->getDependencies($className);
         $new->autoInject($parameters, []);
         $extra = array_diff($new->keys(), $parameters->keys());
 
         return iterator_to_array(
             $new->without(...$extra)
         );
+    }
+
+    private function getDependencies(string $className): ParametersInterface
+    {
+        if (method_exists($className, '__construct')) {
+            $reflection = new ReflectionMethod($className, '__construct');
+
+            return reflectionToParameters($reflection);
+        }
+
+        return parameters();
     }
 
     /**
@@ -135,10 +146,8 @@ final class Container implements ContainerInterface
                 continue;
             }
             $className = $parameter->type()->typeHinting();
-            if (method_exists($className, '__construct')) {
-                $reflection = new ReflectionMethod($className, '__construct');
-                $reflectionParameters = reflectionToParameters($reflection);
-
+            $reflectionParameters = $this->getDependencies($className);
+            if (count($reflectionParameters) > 0) {
                 try {
                     $this->autoInject(
                         $reflectionParameters,

@@ -121,12 +121,24 @@ final class ContainerTest extends TestCase
             foo: 'bar',
             bar: 'baz'
         );
+        $keysBefore = $container->keys();
         $extract = $container->extract(StdClassDependency::class);
+        $this->assertSame($keysBefore, $container->keys());
         $this->assertArrayHasKey('stdClass', $extract);
         $this->assertCount(1, $extract);
         $this->assertSame($stdClass, $extract['stdClass']);
         $this->assertArrayNotHasKey('foo', $extract);
         $this->assertArrayNotHasKey('bar', $extract);
+    }
+
+    public function testExtractDoesNotMutate(): void
+    {
+        $container = new Container(
+            stdClass: new stdClass(),
+        );
+        $keysBefore = $container->keys();
+        $container->extract(NestedDependency::class);
+        $this->assertSame($keysBefore, $container->keys());
     }
 
     public function testWithAutoInjectSelfContainerOrderFailureIsFeasible(): void
