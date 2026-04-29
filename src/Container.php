@@ -138,22 +138,21 @@ final class Container implements ContainerInterface
             if (method_exists($className, '__construct')) {
                 $reflection = new ReflectionMethod($className, '__construct');
                 $reflectionParameters = reflectionToParameters($reflection);
-                if (count($reflectionParameters) > 0) {
-                    try {
-                        $this->autoInject(
-                            $reflectionParameters,
-                            [...$resolving, $missingDep],
-                            ...$ignore
-                        );
-                        $arguments = $reflectionParameters(...iterator_to_array($this))->toArray();
-                    } catch (Throwable $e) {
-                        $failures[] = [
-                            $missingDep,
-                            "Failed to resolve dependencies for `{$className}`: {$e->getMessage()}",
-                        ];
 
-                        continue;
-                    }
+                try {
+                    $this->autoInject(
+                        $reflectionParameters,
+                        [...$resolving, $missingDep],
+                        ...$ignore
+                    );
+                    $arguments = $reflectionParameters(...iterator_to_array($this))->toArray();
+                } catch (Throwable $e) {
+                    $failures[] = [
+                        $missingDep,
+                        "Failed to resolve dependencies for `{$className}`: {$e->getMessage()}",
+                    ];
+
+                    continue;
                 }
             }
 
