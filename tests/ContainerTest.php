@@ -20,7 +20,9 @@ use Chevere\Container\Exceptions\ContainerNotFoundException;
 use Chevere\Tests\src\AutoInjectOrderDependency;
 use Chevere\Tests\src\AutoInjectOrderRoot;
 use Chevere\Tests\src\ClassWithObjectDefault;
+use Chevere\Tests\src\ClassWithoutConstructor;
 use Chevere\Tests\src\ClassWithPrimitiveDefault;
+use Chevere\Tests\src\DependsOnClassWithoutConstructor;
 use Chevere\Tests\src\InterfaceNamedDependency;
 use Chevere\Tests\src\NestedDependency;
 use Chevere\Tests\src\StdClassDependency;
@@ -107,12 +109,7 @@ final class ContainerTest extends TestCase
     public function testWithAutoInjectMissingNested(): void
     {
         $dependencies = new Dependencies(NestedDependency::class);
-        $this->expectException(ContainerException::class);
-        $this->expectExceptionMessage(
-            <<<PLAIN
-            [stdClassDependency]: Failed to resolve dependencies for `Chevere\Tests\src\StdClassDependency`: Missing required argument(s): `stdClass`
-            PLAIN
-        );
+        $this->expectNotToPerformAssertions();
         (new Container())->withAutoInject($dependencies);
     }
 
@@ -226,5 +223,16 @@ final class ContainerTest extends TestCase
         $dependencies = new Dependencies(InterfaceNamedDependency::class);
         $container = (new Container())->withAutoInject($dependencies);
         $this->assertCount(0, $container);
+    }
+
+    public function testWithAutoInjectClassWithoutConstructor(): void
+    {
+        $dependencies = new Dependencies(DependsOnClassWithoutConstructor::class);
+        $container = (new Container())->withAutoInject($dependencies);
+        $this->assertTrue($container->has('classWithoutConstructor'));
+        $this->assertInstanceOf(
+            ClassWithoutConstructor::class,
+            $container->get('classWithoutConstructor')
+        );
     }
 }
