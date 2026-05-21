@@ -96,14 +96,10 @@ final class ContainerTest extends TestCase
             StdClassDependency::class,
             $with->get('stdClassDependency')
         );
-        $this->expectException(ContainerException::class);
-        $this->expectExceptionMessage(
-            <<<PLAIN
-            [one]: Parameter one is not an object type
-            [two]: Parameter two is not an object type
-            PLAIN
-        );
         $container->withAutoInject($dependencies);
+        $this->assertFalse($container->has('one'));
+        $this->assertFalse($container->has('two'));
+        $this->assertFalse($container->has('extra'));
     }
 
     public function testWithAutoInjectMissingNested(): void

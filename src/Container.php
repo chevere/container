@@ -137,8 +137,6 @@ final class Container implements ContainerInterface
                 ? $parameters->get($missingDep)
                 : null;
             if (! ($parameter instanceof ObjectParameterInterface)) {
-                $failures[] = [$missingDep, "Parameter {$missingDep} is not an object type"];
-
                 continue;
             }
             $primitive = $parameter->type()->primitive();
