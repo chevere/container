@@ -79,6 +79,24 @@ final class DependenciesTest extends TestCase
         $dependencies->requirer('');
     }
 
+    public function testAssertSingleError(): void
+    {
+        $fileLine = $this->getDependentFileLine(ValueIntDependency::class);
+        $dependencies = new Dependencies(ValueIntDependency::class);
+
+        try {
+            $dependencies->assert(new Container());
+            $this->fail('Expected LogicException was not thrown');
+        } catch (LogicException $e) {
+            $this->assertSame(
+                <<<PLAIN
+                Missing argument `value` as previously defined by `Chevere\\Tests\\src\\ValueIntDependency` in {$fileLine}
+                PLAIN,
+                $e->getMessage()
+            );
+        }
+    }
+
     public function testAssert(): void
     {
         $this->expectException(LogicException::class);

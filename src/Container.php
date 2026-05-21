@@ -117,11 +117,7 @@ final class Container implements ContainerInterface
         array $resolving = [],
         string ...$ignore
     ): void {
-        $missingDeps = array_diff(
-            $parameters->keys(),
-            $this->keys(),
-            $ignore
-        );
+        $missingDeps = array_diff($parameters->keys(), $this->keys(), $ignore);
         $failures = [];
         foreach ($missingDeps as $missingDep) {
             if ($parameters->optionalKeys()->contains($missingDep)) {
@@ -139,8 +135,7 @@ final class Container implements ContainerInterface
             if (! ($parameter instanceof ObjectParameterInterface)) {
                 continue;
             }
-            $primitive = $parameter->type()->primitive();
-            if ($primitive !== TypeInterface::PRIMITIVE_CLASS_NAME) {
+            if ($parameter->type()->primitive() !== TypeInterface::PRIMITIVE_CLASS_NAME) {
                 continue;
             }
             $className = $parameter->type()->typeHinting();

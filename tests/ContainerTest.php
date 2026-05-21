@@ -19,6 +19,8 @@ use Chevere\Container\Exceptions\ContainerException;
 use Chevere\Container\Exceptions\ContainerNotFoundException;
 use Chevere\Tests\src\AutoInjectOrderDependency;
 use Chevere\Tests\src\AutoInjectOrderRoot;
+use Chevere\Tests\src\CircularA;
+use Chevere\Tests\src\CircularC;
 use Chevere\Tests\src\ClassWithObjectDefault;
 use Chevere\Tests\src\ClassWithoutConstructor;
 use Chevere\Tests\src\ClassWithPrimitiveDefault;
@@ -237,6 +239,30 @@ final class ContainerTest extends TestCase
         $this->assertSame($context, $instance->context);
     }
 
+    public function testWithAutoInjectCircularDependency(): void
+    {
+        $dependencies = new Dependencies(CircularA::class);
+        $this->expectException(ContainerException::class);
+        $this->expectExceptionMessage('Circular dependency detected while resolving `circularB`');
+        (new Container())->withAutoInject($dependencies);
+    }
+
+    public function testWithAutoInjectCircularDetectionContinuesToProcessRemainingDeps(): void
+    {
+        $dependencies = new Dependencies(CircularC::class);
+
+        try {
+            (new Container())->withAutoInject($dependencies);
+            $this->fail('Expected ContainerException');
+        } catch (ContainerException $e) {
+            $this->assertGreaterThan(
+                1,
+                substr_count($e->getMessage(), 'neverInstantiable'),
+                'Circular detection must continue processing remaining deps in the same loop'
+            );
+        }
+    }
+
     public function testWithAutoInjectInterfaceDependencyIgnored(): void
     {
         $dependencies = new Dependencies(InterfaceNamedDependency::class);
@@ -248,6 +274,17 @@ final class ContainerTest extends TestCase
     {
         $dependencies = new Dependencies(DependsOnClassWithoutConstructor::class);
         $container = (new Container())->withAutoInject($dependencies);
+        $this->assertTrue($container->has('classWithoutConstructor'));
+        $this->assertInstanceOf(
+            ClassWithoutConstructor::class,
+            $container->get('classWithoutConstructor')
+        );
+    }
+
+    public function testWithAutoInjectClassWithoutConstructorNonEmptyContainer(): void
+    {
+        $dependencies = new Dependencies(DependsOnClassWithoutConstructor::class);
+        $container = (new Container(foo: 'bar'))->withAutoInject($dependencies);
         $this->assertTrue($container->has('classWithoutConstructor'));
         $this->assertInstanceOf(
             ClassWithoutConstructor::class,
