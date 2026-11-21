@@ -26,7 +26,6 @@ use ReflectionMethod;
 use Stringable;
 use Throwable;
 use TypeError;
-use function Chevere\Message\message;
 use function Chevere\Parameter\getType;
 use function Chevere\Parameter\reflectionToParameters;
 
@@ -115,13 +114,13 @@ final class Dependencies implements DependenciesInterface
             $requirer = $this->requirer($name);
             $fileLine = $this->locate($requirer);
             if (! $hasArgument) {
-                $errors[] = message(
-                    <<<PLAIN
-                    Missing argument `%key%` as previously defined by `%requirer%` in %fileLine%
+                $errors[] = sprintf(
+                    <<<'PLAIN'
+                    Missing argument `%s` as previously defined by `%s` in %s
                     PLAIN,
-                    key: $name,
-                    requirer: $requirer,
-                    fileLine: $fileLine,
+                    $name,
+                    $requirer,
+                    $fileLine,
                 );
 
                 continue;
@@ -134,18 +133,19 @@ final class Dependencies implements DependenciesInterface
                 $parameter($value);
             } catch (Throwable) {
                 $value ??= null;
-                $provided = getType($value);
+                $provided = gettype($value);
                 if (is_object($value)) {
                     $provided = get_class($value);
                 }
-                $errors[] = message(
-                    <<<PLAIN
-                    Argument `{$name}` provided as `%provided%` is not compatible with `%expected%` as previously defined by `%requirer%` in %fileLine%
+                $errors[] = sprintf(
+                    <<<'PLAIN'
+                    Argument `%s` provided as `%s` is not compatible with `%s` as previously defined by `%s` in %s
                     PLAIN,
-                    provided: $provided,
-                    expected: $parameter->type()->typeHinting(),
-                    requirer: $requirer,
-                    fileLine: $fileLine,
+                    $name,
+                    $provided,
+                    $parameter->type()->typeHinting(),
+                    $requirer,
+                    $fileLine,
                 );
             }
         }
@@ -234,15 +234,15 @@ final class Dependencies implements DependenciesInterface
             } catch (Throwable $e) {
                 $requirer = $this->requirer($name);
                 $fileLine = $this->locate($requirer);
-                $errors[] = message(
-                    <<<PLAIN
-                    Variable `\${$name}` defined as `%provided%` is not compatible with `%expected%` as previously defined by `%requirer%` in %fileLine%
+                $errors[] = sprintf(
+                    <<<'PLAIN'
+                    Variable `$%s` defined as `%s` is not compatible with `%s` as previously defined by `%s` in %s
                     PLAIN,
-                    name: $name,
-                    provided: $parameter->type()->typeHinting(),
-                    expected: $existing->type()->typeHinting(),
-                    requirer: $requirer,
-                    fileLine: $fileLine,
+                    $name,
+                    $parameter->type()->typeHinting(),
+                    $existing->type()->typeHinting(),
+                    $requirer,
+                    $fileLine,
                 );
             }
             $parameters = $parameters->without($name);
